@@ -1,7 +1,7 @@
+from fastapi import FastAPI
 import datetime
 from sqlite3 import Time
 from xmlrpc.client import DateTime, boolean
-from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from numpy import empty
 
@@ -28,9 +28,10 @@ app = FastAPI()
 def ave(room):
     result = collection.find({"room": room}, {"_id": 0})
     result_list = []
+    time_Delta = 0
     for record in result:
-        result_list.append(record["current_duration"])
-    return sum(result_list)/len(result_list)
+        time_Delta += (record["end_time"] - record["start_time"])
+    return time_Delta/len(result_list)
 
 @app.get("/get-room/{room}")
 def get_room(room: int):
@@ -63,20 +64,18 @@ def get_room(room: int):
     if result_list == []:
         return {
                 "room": room,
-                "status": False
+                "status": 1
                 }
     result = result_list[-1]
     if not result["status"]:
         return {
                 "room": result["room"],
                 "status": result["status"],
-                "average": ave(room)
                 }
     elif result["status"]:
         return {
                 "room": result["room"],
                 "status": result["status"],
                 "start_time": result["start_time"],
-                "current_duration": result["current_duration"],
-                "average": ave(room)
+                "current_duration": result["current_duration"]    
                 }
