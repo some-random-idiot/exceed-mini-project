@@ -3,7 +3,6 @@ from sqlite3 import Time
 from xmlrpc.client import DateTime, boolean
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
-from numpy import average, size
 
 from pymongo import MongoClient
 from pydantic import BaseModel
@@ -13,7 +12,7 @@ class Record(BaseModel):
     status: boolean
     start_time: datetime.time
     end_time: datetime.time
-    duration: int
+    duration: datetime.timedelta
     room: int
 
 
@@ -34,14 +33,36 @@ def ave(room):
 
 @app.get("/get-room/{room}")
 def get_room(room: int):
+    """Get the record in the database
+
+    Example
+    Someone in the restroom :
+        {
+            "room": 1,
+            "status": true,
+            "start_time": "11:00",
+            "average": 60
+        }
+    Someone not in the restroom:
+        {
+            "room": 1,
+            "status": false,
+            "average": 60
+        } 
+    No one in the restroom yet:
+        {
+            "room": 1,
+            "status": false
+        }
+    """
     result = collection.find_one({"room": room}, {"_id": 0})
-    if result["status"] == 'true':
+    if result["status"] == False:
         return {
                 "room": result["room"],
                 "status": result["status"],
                 "average": ave(room)
                 }
-    elif result["status"] == 'false':
+    elif result["status"] == True:
         return {
                 "room": result["room"],
                 "status": result["status"],
@@ -50,5 +71,5 @@ def get_room(room: int):
                 }
     return {
         "room": room,
-        "status": True
+        "status": False
     }
