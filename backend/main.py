@@ -58,13 +58,13 @@ def get_room(room: int):
     """
     result = collection.find({"room": room}, {"_id": 0})
     result_list = []
+    for record in result:
+        result_list.append(record)
     if result_list == []:
         return {
                 "room": room,
                 "status": False
                 }
-    for record in result:
-        result_list.append(record)
     result = result_list[-1]
     if not result["status"]:
         return {
