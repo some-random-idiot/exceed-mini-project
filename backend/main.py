@@ -3,12 +3,13 @@ from sqlite3 import Time
 from xmlrpc.client import DateTime, boolean
 from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
+from numpy import empty
 
 from pymongo import MongoClient
 from pydantic import BaseModel
 
 
-class Record(BaseModel):
+class Record():
     status: boolean
     start_time: datetime.time
     end_time: datetime.time
@@ -55,21 +56,26 @@ def get_room(room: int):
             "status": false
         }
     """
-    result = collection.find_one({"room": room}, {"_id": 0})
-    if result["status"] == 'false':
+    result = collection.find({"room": room}, {"_id": 0})
+    result_list = []
+    if result_list == []:
+        return {
+                "room": room,
+                "status": False
+                }
+    for record in result:
+        result_list.append(record)
+    result = result_list[-1]
+    if not result["status"]:
         return {
                 "room": result["room"],
                 "status": result["status"],
                 "average": ave(room)
                 }
-    elif result["status"] == 'true':
+    elif result["status"]:
         return {
                 "room": result["room"],
                 "status": result["status"],
                 "start_time": result["start_time"],
                 "average": ave(room)
                 }
-    return {
-        "room": room,
-        "status": False
-    }
