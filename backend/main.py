@@ -1,5 +1,6 @@
 import datetime
 from xmlrpc.client import boolean
+
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 
@@ -11,7 +12,6 @@ class Record(BaseModel):
     status: boolean  # True if the record is active (someone is in the restroom).
     name: str
     start_time: datetime.time
-    end_time: datetime.time
     current_duration: datetime.timedelta
     room: int
 
@@ -24,8 +24,8 @@ collection = db["database"]
 app = FastAPI()
 
 
-@app.post("/create-record")
-def create_record(record: Record):
+@app.post("/create-room")
+def create_room(record: Record):
     """Creates a new record in the database.
     This is used when there are no previous records of a room, or the latest record has already ended.
     If provided status is False, it will get changed to True automatically.
@@ -35,7 +35,6 @@ def create_record(record: Record):
         "status": true,
         "name": "John Doe",
         "start_time": "10:00",
-        "end_time": "11:00",
         "current_duration": "00:00:00",
         "room": 1
     }
@@ -46,16 +45,15 @@ def create_record(record: Record):
     return {"status": "success"}
 
 
-@app.put("/update-record/{room}")
-async def update_record(room: int, request: Request):
+@app.put("/update-room/{room}")
+async def update_room(room: int, request: Request):
     """Updates the latest record of a room in the database.
     If a record's 'status' is False, it rejects the update.
 
     Example request:
     {
         "status": false,
-        "end_time": "11:00",
-        "current_duration": "00:01:00"
+        "current_duration": "00:10:00"
     }
     """
     attributes = await request.json()
