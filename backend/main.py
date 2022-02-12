@@ -140,7 +140,7 @@ async def update_room(room: int, request: Request):
 
             if has_attribute:
                 collection.update_one({"_id": target_record["_id"]}, {"$set": attributes})
-
+                # Update the duration.
                 current_duration = str(datetime.datetime.strptime(datetime.datetime.now().time().strftime("%H:%M:%S"), "%H:%M:%S")
                                        - datetime.datetime.strptime(target_record["start_time"], "%H:%M:%S"))
                 collection.update_one({"_id": target_record["_id"]}, {"$set": {"current_duration": current_duration}})
