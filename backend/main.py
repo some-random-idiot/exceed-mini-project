@@ -77,5 +77,6 @@ def get_room(room: int):
                 "room": result["room"],
                 "status": result["status"],
                 "start_time": result["start_time"],
+                "current_duration": result["current_duration"],
                 "average": ave(room)
                 }
