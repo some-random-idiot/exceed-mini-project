@@ -64,16 +64,25 @@ async def update_record(room: int, request: Request):
                 "message": "Name update attempt detected. Please create a new record instead."}
 
     if collection.find_one({"room": room}):
+        # Get the latest record.
         records = collection.find({"room": room})
         record_list = []
         for record in records:
             record_list.append(record)
-        target_record = record_list[-1]  # Get the latest record.
+        target_record = record_list[-1]
 
         if target_record["status"]:
-            collection.update_one({"_id": target_record["_id"]}, {"$set": attributes})
-            return {"status": "success",
-                    "message": f"Updated:\\n {attributes}"}
+            # Check if the attributes are valid.
+            has_attribute = False
+            for attribute in attributes:
+                has_attribute = attribute in target_record
+
+            if has_attribute:
+                collection.update_one({"_id": target_record["_id"]}, {"$set": attributes})
+                return {"status": "success"}
+            else:
+                return {"status": "failure",
+                        "message": "No such attribute detected. Please check the request body."}
         else:
             return {"status": "failure",
                     "message": "The latest record has already ended. Please create a new record instead."}
