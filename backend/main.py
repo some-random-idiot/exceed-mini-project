@@ -12,7 +12,7 @@ class Record(BaseModel):
     status: boolean
     start_time: datetime.time
     end_time: datetime.time
-    duration: datetime.timedelta
+    current_duration: datetime.timedelta
     room: int
 
 
@@ -28,7 +28,7 @@ def ave(room):
     result = collection.find({"room": room}, {"_id": 0})
     result_list = []
     for record in result:
-        result_list.append(record["duration"])
+        result_list.append(record["current_duration"])
     return sum(result_list)/len(result_list)
 
 @app.get("/get-room/{room}")
@@ -56,13 +56,13 @@ def get_room(room: int):
         }
     """
     result = collection.find_one({"room": room}, {"_id": 0})
-    if result["status"] == False:
+    if result["status"] == 'false':
         return {
                 "room": result["room"],
                 "status": result["status"],
                 "average": ave(room)
                 }
-    elif result["status"] == True:
+    elif result["status"] == 'true':
         return {
                 "room": result["room"],
                 "status": result["status"],
