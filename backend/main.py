@@ -9,7 +9,6 @@ from pydantic import BaseModel
 
 class Database(BaseModel):
     status: boolean
-    name: str
     start_time: DateTime
     end_time: DateTime
     current_duration: int
