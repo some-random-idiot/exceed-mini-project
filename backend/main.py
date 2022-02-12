@@ -83,8 +83,8 @@ def get_room(room: int):
                 }
 
 
-@app.post("/create-room")
-async def create_room(record: Record):
+@app.post("/update-room")
+async def update_room(record: Record):
     """Creates a new record in the database.
     This is used when there are no previous records of a room, or the latest record has already ended.
     It automatically creates timestamp and duration.
