@@ -1,23 +1,20 @@
 import datetime
 
-from xmlrpc.client import boolean
+from typing import Optional
 
 from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
-
-from sqlite3 import Time
-from numpy import empty
 
 from pymongo import MongoClient
 from pydantic import BaseModel
 
 
 class Record(BaseModel):
-    status: boolean  # True if the record is active (someone is in the restroom).
-    name: str
-    start_time: datetime.time
-    current_duration: datetime.timedelta
-    room: int
+    status: int  # 1 if the record is active (someone is in the restroom).
+    name: Optional[str]
+    start_time: Optional[datetime.time]
+    current_duration: Optional[datetime.timedelta]
+    room: Optional[int]
 
 
 client = MongoClient('mongodb://localhost', 27017)
@@ -64,7 +61,7 @@ def get_room(room: int):
     result_list = []
     for record in result:
         result_list.append(record)
-    if result_list == []:
+    if not result_list:
         return {
                 "room": room,
                 "status": False
@@ -90,19 +87,23 @@ def get_room(room: int):
 def create_room(record: Record):
     """Creates a new record in the database.
     This is used when there are no previous records of a room, or the latest record has already ended.
-    If provided status is False, it will get changed to True automatically.
+    It automatically creates timestamp and duration.
 
     Example request:
     {
         "status": true,
         "name": "John Doe",
-        "start_time": "10:00",
-        "current_duration": "00:00:00",
         "room": 1
     }
     """
     record = jsonable_encoder(record)
-    record["status"] = True
+    if not record["status"]:
+        return {"status": "failure",
+                "message": "Initial status can't be 0."}
+
+    record["status"] = 1
+    record["start_time"] = str(datetime.datetime.now().time().strftime("%H:%M:%S"))
+    record["current_duration"] = str(datetime.timedelta(0))
     collection.insert_one(record)
     return {"status": "success"}
 
@@ -110,18 +111,18 @@ def create_room(record: Record):
 @app.put("/update-room/{room}")
 async def update_room(room: int, request: Request):
     """Updates the latest record of a room in the database.
-    If a record's 'status' is False, it rejects the update.
+    If the latest record's 'status' is False, then the method rejects the update.
 
     Example request:
     {
         "status": false,
-        "current_duration": "00:10:00"
     }
     """
     attributes = await request.json()
-    if "name" in attributes:
-        return {"status": "failure",
-                "message": "Name update attempt detected. Please create a new record instead."}
+    if "status" in attributes:
+        if attributes["status"]:
+            return {"status": "failure",
+                    "message": "Status for updating a room information can only be 0. Use create-room otherwise."}
 
     if collection.find_one({"room": room}):
         # Get the latest record.
@@ -139,6 +140,10 @@ async def update_room(room: int, request: Request):
 
             if has_attribute:
                 collection.update_one({"_id": target_record["_id"]}, {"$set": attributes})
+
+                current_duration = str(datetime.datetime.strptime(datetime.datetime.now().time().strftime("%H:%M:%S"), "%H:%M:%S")
+                                       - datetime.datetime.strptime(target_record["start_time"], "%H:%M:%S"))
+                collection.update_one({"_id": target_record["_id"]}, {"$set": {"current_duration": current_duration}})
                 return {"status": "success"}
             else:
                 return {"status": "failure",
@@ -148,4 +153,4 @@ async def update_room(room: int, request: Request):
                     "message": "The latest record has already ended. Please create a new record instead."}
     else:
         return {"status": "failure",
-                "message": f"No previous record of room {room} found. Please create a new record."}
+                "message": f"No previous record(s) of room {room} found. Please create a new record."}
