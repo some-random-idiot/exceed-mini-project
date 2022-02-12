@@ -27,7 +27,8 @@ app = FastAPI()
 @app.post("/create-record")
 def create_record(record: Record):
     """Creates a new record in the database.
-    This is used when there are no previous records of a room or the latest record has already ended.
+    This is used when there are no previous records of a room, or the latest record has already ended.
+    If provided status is False, it will get changed to True automatically.
 
     Example request:
     {
@@ -40,12 +41,9 @@ def create_record(record: Record):
     }
     """
     record = jsonable_encoder(record)
-    if record["status"]:
-        collection.insert_one(record)
-        return {"status": "success"}
-    else:
-        return {"status": "failure",
-                "message": "The record's initial status can't be false."}
+    record["status"] = True
+    collection.insert_one(record)
+    return {"status": "success"}
 
 
 @app.put("/update-record/{room}")
