@@ -30,9 +30,9 @@ def ave(room):
     result_list = []
     for record in result:
         result_list.append(record["current_duration"])
-    return sum(result_list)/len(result_list)
+    return sum(result_list) / len(result_list)
 
-  
+
 @app.get("/get-room/{room}")
 def get_room(room: int):
     """Get the record in the database
@@ -63,24 +63,24 @@ def get_room(room: int):
         result_list.append(record)
     if not result_list:
         return {
-                "room": room,
-                "status": False
-                }
+            "room": room,
+            "status": False
+        }
     result = result_list[-1]
     if not result["status"]:
         return {
-                "room": result["room"],
-                "status": result["status"],
-                "average": ave(room)
-                }
+            "room": result["room"],
+            "status": result["status"],
+            "average": ave(room)
+        }
     elif result["status"]:
         return {
-                "room": result["room"],
-                "status": result["status"],
-                "start_time": result["start_time"],
-                "current_duration": result["current_duration"],
-                "average": ave(room)
-                }
+            "room": result["room"],
+            "status": result["status"],
+            "start_time": result["start_time"],
+            "current_duration": result["current_duration"],
+            "average": ave(room)
+        }
 
 
 @app.post("/update-room")
@@ -119,8 +119,9 @@ async def update_room(record: Record):
         if has_attribute:
             collection.update_one({"_id": target_record["_id"]}, {"$set": record})
             # Update the duration.
-            current_duration = str(datetime.datetime.strptime(datetime.datetime.now().time().strftime("%H:%M:%S"), "%H:%M:%S")
-                                    - datetime.datetime.strptime(target_record["start_time"], "%H:%M:%S"))
+            current_duration = str(
+                datetime.datetime.strptime(datetime.datetime.now().time().strftime("%H:%M:%S"), "%H:%M:%S")
+                - datetime.datetime.strptime(target_record["start_time"], "%H:%M:%S"))
             collection.update_one({"_id": target_record["_id"]}, {"$set": {"current_duration": current_duration}})
             return {"status": "success"}
         else:
